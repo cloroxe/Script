@@ -5,19 +5,37 @@ setlocal
 chcp 65001 >nul
 cd /d "%~dp0.."
 
-call :findpython || goto :nopython
+set "PY="
+py -3 --version >nul 2>nul
+if not errorlevel 1 set "PY=py -3"
+if defined PY goto :pyfound
+python --version >nul 2>nul
+if not errorlevel 1 set "PY=python"
+:pyfound
+if not defined PY goto :nopython
+echo Python utilise :
+%PY% --version
+%PY% -c "import struct,sys; print('  64 bits :', struct.calcsize('P')*8==64, '| version', sys.version_info[0:3])"
+set "WHEELS=%CD%\wheels"
+if exist "%WHEELS%\*.whl" goto :haswheels
+echo.
+echo ATTENTION : le dossier "wheels" est introuvable ou vide : %WHEELS%
+echo Tu utilises probablement un ancien ZIP. Extrais le NOUVEAU zip dans un dossier propre.
+:haswheels
 
 echo [1/4] Environnement de build...
 %PY% -m venv .buildenv || goto :fail
 call ".buildenv\Scripts\activate.bat" || goto :fail
+
 rem Priorite aux paquets embarques (dossier wheels) : aucun telechargement necessaire.
-python -m pip install --no-index --find-links "%CD%\wheels" uefn-vibe-starter pyinstaller --quiet
+python -m pip install --no-index --find-links "%WHEELS%" uefn-vibe-starter pyinstaller
 if not errorlevel 1 goto :installed
 echo.
-echo     Paquets locaux inutilisables avec cette version de Python : telechargement depuis Internet...
+echo     Installation hors-ligne impossible ^(voir l'erreur ci-dessus^) : tentative via Internet...
 python -m pip install --upgrade pip --quiet
 python -m pip install . pyinstaller --retries 10 --timeout 60 || goto :fail
 :installed
+echo     Paquets installes.
 
 set "OPTS=--noconfirm --onefile --clean --collect-data uefn_vibe --add-data src\uefn_vibe\bridge\vibe_bridge.py;uefn_vibe\bridge"
 
@@ -32,13 +50,6 @@ echo.
 echo Garde les DEUX exe dans le meme dossier, puis double-clique uefn-vibe-setup.exe.
 goto :end
 
-:findpython
-set "PY=py -3"
-%PY% --version >nul 2>nul && exit /b 0
-set "PY=python"
-%PY% --version >nul 2>nul && exit /b 0
-exit /b 1
-
 :nopython
 echo.
 echo Python 3.10 ou plus recent est introuvable.
@@ -47,9 +58,9 @@ goto :end
 
 :fail
 echo.
-echo Une etape a echoue. Lis le message juste au-dessus.
-echo Si c'est une erreur reseau ^(IncompleteRead, timeout^) : coupe VPN/antivirus un instant, change de reseau
-echo ^(partage de connexion du telephone^), ou installe Python 3.13 et relance. Le dossier wheels evite Internet.
+echo Une etape a echoue. Lis le message juste au-dessus et envoie-le tel quel.
+echo Si c'est une erreur reseau ^(IncompleteRead, timeout^) : verifie que le dossier wheels est bien present
+echo ^(voir plus haut^), coupe VPN/antivirus un instant, ou change de reseau.
 
 :end
 if not defined CI pause
