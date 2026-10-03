@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import secrets
 import sys
 from importlib import resources
@@ -29,6 +30,17 @@ def _read_json(path: Path) -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError as error:
         raise VibeError(f"{path} n'est pas un JSON valide ({error}). Corrige-le puis relance.") from None
+
+
+def server_command(python_exe: str | None = None) -> tuple[str, list[str], str | None]:
+    """Commande qui lance le serveur MCP : python -m ..., ou l'EXE voisin quand on tourne en .exe."""
+    if python_exe:
+        return python_exe, ["-m", "uefn_vibe.server"], None
+    if getattr(sys, "frozen", False):
+        exe = Path(sys.executable).with_name("uefn-vibe-mcp" + (".exe" if os.name == "nt" else ""))
+        note = None if exe.is_file() else f"{exe.name} est introuvable à côté de {Path(sys.executable).name} : garde les deux fichiers dans le même dossier."
+        return str(exe), [], note
+    return sys.executable, ["-m", "uefn_vibe.server"], None
 
 
 def install(project: Path, *, force: bool = False, python_exe: str | None = None) -> dict:
@@ -68,9 +80,12 @@ def install(project: Path, *, force: bool = False, python_exe: str | None = None
     servers = config.setdefault("mcpServers", {})
     servers.setdefault("unreal-mcp", {"type": "http", "url": "http://127.0.0.1:8000/mcp"})
     if force or "uefn-vibe" not in servers:
+        command, args, command_note = server_command(python_exe)
+        if command_note:
+            notes.append(command_note)
         servers["uefn-vibe"] = {
-            "command": python_exe or sys.executable,
-            "args": ["-m", "uefn_vibe.server"],
+            "command": command,
+            "args": args,
             "env": {"UEFN_PROJECT_DIR": str(project)},
         }
     mcp_path.write_text(json.dumps(config, indent=2), encoding="utf-8")
@@ -93,16 +108,39 @@ def install(project: Path, *, force: bool = False, python_exe: str | None = None
     }
 
 
+def _interactive() -> bool:
+    return bool(sys.stdin) and sys.stdin.isatty()
+
+
+def _pause() -> None:
+    """Double-clic sur l'EXE : garde la fenêtre ouverte pour lire le résultat."""
+    if getattr(sys, "frozen", False) and _interactive():
+        try:
+            input("\nAppuie sur Entrée pour fermer… ")
+        except EOFError:
+            pass
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="uefn-vibe-setup", description=__doc__)
-    parser.add_argument("--project", required=True, type=Path, help="Racine du projet UEFN (contient le .uefnproject)")
+    parser.add_argument("--project", type=Path, help="Racine du projet UEFN (contient le .uefnproject)")
     parser.add_argument("--python", dest="python_exe", help="Python à utiliser dans .mcp.json (défaut : celui-ci)")
     parser.add_argument("--force", action="store_true", help="Régénère le jeton, AGENTS.md et l'entrée MCP")
     args = parser.parse_args(argv)
+
+    project = args.project
+    if project is None and _interactive():
+        raw = input("Dossier de ton projet UEFN (glisse-le ici, puis Entrée) : ").strip().strip('"').strip("'")
+        project = Path(raw) if raw else None
+    if project is None:
+        print("Erreur : indique le projet avec --project <dossier>.", file=sys.stderr)
+        _pause()
+        return 1
     try:
-        result = install(args.project, force=args.force, python_exe=args.python_exe)
+        result = install(project, force=args.force, python_exe=args.python_exe)
     except VibeError as error:
         print(f"Erreur : {error}", file=sys.stderr)
+        _pause()
         return 1
     print(f"Vibe Starter installé dans {result['project']}\n")
     print("Étapes suivantes :")
@@ -112,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  4. Lance ton agent (ex. claude) depuis : {result['project']}")
     for note in result["notes"]:
         print(f"  ! {note}")
+    _pause()
     return 0
 
 

@@ -49,6 +49,16 @@ Puis :
 `uefn-vibe-setup` crée `VibeStarter/` (pont, jeton, `.env`, `Inbox/`), écrit `.mcp.json` (en conservant tes serveurs),
 `AGENTS.md` (les consignes de l'agent) et `CLAUDE.md`. Il ne remplace rien sans `--force`, et jamais ton `.env`.
 
+## Windows : `.exe` (sans Python chez l'utilisateur final)
+
+Un `.exe` Windows ne peut se construire que sous Windows (ou en CI). Deux scripts sont fournis dans `packaging/` :
+- `build_exe.bat` : crée `dist\uefn-vibe-setup.exe` et `dist\uefn-vibe-mcp.exe` (PyInstaller). Garde-les dans le même dossier ;
+  double-clique `uefn-vibe-setup.exe`, il te demande le dossier du projet et écrit `.mcp.json` pour pointer sur `uefn-vibe-mcp.exe`.
+- `install.bat` : alternative **sans exe** (crée un `.venv` et installe le paquet).
+- `build-windows.yml` : modèle GitHub Actions pour obtenir les exe sans rien installer (à copier dans `.github/workflows/`).
+
+Ces scripts `.bat` n'ont **pas** été exécutés sous Windows (seule leur configuration PyInstaller l'a été, sous Linux).
+
 ## Garde-fous
 
 - **Plafond de générations** par session (50 par défaut, `VIBE_MAX_GENERATIONS`) : une boucle d'agent ne vide pas tes crédits.
@@ -60,9 +70,9 @@ Puis :
 
 ## Limites — à lire
 
-**Ce qui est vérifié** : 85 tests automatiques (appels fournisseurs simulés d'après leurs docs, machine d'état Meshy
+**Ce qui est vérifié** : 89 tests automatiques (appels fournisseurs simulés d'après leurs docs, machine d'état Meshy
 preview → texture → import, sécurité du pont avec un faux module `unreal`, installateur, transport stdio MCP réel,
-packaging du wheel).
+packaging du wheel, et binaires PyInstaller **Linux** construits avec les mêmes options que sous Windows puis exécutés : installateur et serveur MCP).
 
 **Ce qui ne l'est pas**, faute d'UEFN (Windows) et de clés dans l'environnement de développement :
 - Le pont (`vibe_bridge.py`) n'a **jamais tourné dans un vrai UEFN**. Il utilise l'API Python d'Unreal

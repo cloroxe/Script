@@ -95,3 +95,45 @@ def test_cli_main(project, capsys):
     assert "Étapes suivantes" in out and "vibe_bridge.py" in out and "Python Editor Scripting" in out
     assert main(["--project", str(project / "missing")]) == 1
     assert "Erreur" in capsys.readouterr().err
+
+
+def test_server_command_modes(monkeypatch, tmp_path):
+    from uefn_vibe.setup_project import server_command
+    assert server_command("C:/py.exe") == ("C:/py.exe", ["-m", "uefn_vibe.server"], None)
+    assert server_command()[1] == ["-m", "uefn_vibe.server"]
+
+    suffix = ".exe" if __import__("os").name == "nt" else ""
+    setup_exe = tmp_path / ("uefn-vibe-setup" + suffix)
+    setup_exe.write_bytes(b"x")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(setup_exe))
+    command, args, note = server_command()
+    assert command.endswith("uefn-vibe-mcp" + suffix) and args == [] and "introuvable" in note
+    (tmp_path / ("uefn-vibe-mcp" + suffix)).write_bytes(b"x")
+    assert server_command()[2] is None
+
+
+def test_frozen_install_points_mcp_json_at_the_server_exe(monkeypatch, project, tmp_path):
+    suffix = ".exe" if __import__("os").name == "nt" else ""
+    bindir = tmp_path / "bin"
+    bindir.mkdir()
+    (bindir / ("uefn-vibe-setup" + suffix)).write_bytes(b"x")
+    (bindir / ("uefn-vibe-mcp" + suffix)).write_bytes(b"x")
+    monkeypatch.setattr(sys, "frozen", True, raising=False)
+    monkeypatch.setattr(sys, "executable", str(bindir / ("uefn-vibe-setup" + suffix)))
+    install(project)
+    entry = json.loads((project / ".mcp.json").read_text())["mcpServers"]["uefn-vibe"]
+    assert entry["command"] == str(bindir / ("uefn-vibe-mcp" + suffix)) and entry["args"] == []
+
+
+def test_cli_prompts_for_project_when_interactive(monkeypatch, project, capsys):
+    monkeypatch.setattr("uefn_vibe.setup_project._interactive", lambda: True)
+    monkeypatch.setattr("builtins.input", lambda prompt="": f'"{project}"')
+    assert main([]) == 0
+    assert (project / "VibeStarter" / "vibe_bridge.py").is_file()
+
+
+def test_cli_without_project_and_not_interactive_fails(monkeypatch, capsys):
+    monkeypatch.setattr("uefn_vibe.setup_project._interactive", lambda: False)
+    assert main([]) == 1
+    assert "--project" in capsys.readouterr().err
