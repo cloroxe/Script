@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uefn-vibe-starter"
+version = "0.1.0"
+description = "Serveur MCP compagnon pour UEFN : Meshy (3D), ElevenLabs (SFX/voix), OpenAI (icônes), import d'assets, Verse et UI."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "mcp>=1.2",
+  "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.23"]
+
+[project.scripts]
+uefn-vibe-mcp = "uefn_vibe.server:main"
+uefn-vibe-setup = "uefn_vibe.setup_project:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+uefn_vibe = ["bridge/*.py", "kit/*.md", "kit/guides/*.md", "kit/verse/*.verse"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
