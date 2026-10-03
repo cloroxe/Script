@@ -57,7 +57,14 @@ Un `.exe` Windows ne peut se construire que sous Windows (ou en CI). Deux script
 - `install.bat` : alternative **sans exe** (crée un `.venv` et installe le paquet).
 - `build-windows.yml` : modèle GitHub Actions pour obtenir les exe sans rien installer (à copier dans `.github/workflows/`).
 
-Ces scripts `.bat` n'ont **pas** été exécutés sous Windows (seule leur configuration PyInstaller l'a été, sous Linux).
+**Sans Internet / connexion instable** : le ZIP Windows contient un dossier `wheels/` (tous les paquets pour Windows 64 bits,
+Python 3.13 et 3.14). Les `.bat` l'utilisent en premier ; Internet n'est qu'un secours. Pour le (re)générer :
+`pip install uv` puis `python packaging/make_offline_bundle.py --python-version 3.14 --python-version 3.13`
+(le script résout pour Windows et vérifie qu'aucun paquet ne manque). Le dossier n'est pas versionné dans git.
+
+Ces scripts `.bat` n'ont **pas** été exécutés sous Windows (seule leur configuration PyInstaller l'a été, sous Linux,
+avec Python 3.11 et 3.13 ; Python 3.14 n'a pu être testé qu'en version candidate, qui est incompatible avec pydantic :
+si 3.14 pose problème, installe Python 3.13).
 
 ## Garde-fous
 

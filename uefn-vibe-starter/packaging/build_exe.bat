@@ -10,8 +10,14 @@ call :findpython || goto :nopython
 echo [1/4] Environnement de build...
 %PY% -m venv .buildenv || goto :fail
 call ".buildenv\Scripts\activate.bat" || goto :fail
+rem Priorite aux paquets embarques (dossier wheels) : aucun telechargement necessaire.
+python -m pip install --no-index --find-links "%CD%\wheels" uefn-vibe-starter pyinstaller --quiet
+if not errorlevel 1 goto :installed
+echo.
+echo     Paquets locaux inutilisables avec cette version de Python : telechargement depuis Internet...
 python -m pip install --upgrade pip --quiet
 python -m pip install . pyinstaller --retries 10 --timeout 60 || goto :fail
+:installed
 
 set "OPTS=--noconfirm --onefile --clean --collect-data uefn_vibe --add-data src\uefn_vibe\bridge\vibe_bridge.py;uefn_vibe\bridge"
 
@@ -42,6 +48,8 @@ goto :end
 :fail
 echo.
 echo Une etape a echoue. Lis le message juste au-dessus.
+echo Si c'est une erreur reseau ^(IncompleteRead, timeout^) : coupe VPN/antivirus un instant, change de reseau
+echo ^(partage de connexion du telephone^), ou installe Python 3.13 et relance. Le dossier wheels evite Internet.
 
 :end
 if not defined CI pause

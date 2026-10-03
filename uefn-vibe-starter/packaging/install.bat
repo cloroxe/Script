@@ -9,8 +9,14 @@ call :findpython || goto :nopython
 echo [1/3] Creation de l'environnement Python (.venv)...
 %PY% -m venv .venv || goto :fail
 echo [2/3] Installation de UEFN Vibe Starter...
+rem Priorite aux paquets embarques (dossier wheels) : aucun telechargement necessaire.
+".venv\Scripts\python.exe" -m pip install --no-index --find-links "%CD%\wheels" uefn-vibe-starter --quiet
+if not errorlevel 1 goto :installed
+echo.
+echo     Paquets locaux inutilisables avec cette version de Python : telechargement depuis Internet...
 ".venv\Scripts\python.exe" -m pip install --upgrade pip --quiet
 ".venv\Scripts\python.exe" -m pip install . --retries 10 --timeout 60 || goto :fail
+:installed
 echo [3/3] Configuration de ton projet UEFN...
 ".venv\Scripts\python.exe" -m uefn_vibe.setup_project
 goto :end
@@ -31,6 +37,8 @@ goto :end
 :fail
 echo.
 echo Une etape a echoue. Lis le message juste au-dessus.
+echo Si c'est une erreur reseau ^(IncompleteRead, timeout^) : coupe VPN/antivirus un instant, change de reseau
+echo ^(partage de connexion du telephone^), ou installe Python 3.13 et relance. Le dossier wheels evite Internet.
 
 :end
 if not defined CI pause
