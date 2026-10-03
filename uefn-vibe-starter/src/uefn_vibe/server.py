@@ -11,7 +11,12 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from mcp.server.fastmcp import Context, FastMCP
+try:
+    from mcp.server.fastmcp import Context, FastMCP
+except ImportError as error:  # mcp 2.x a renommé FastMCP : pas encore supporté
+    raise SystemExit(
+        "Ce kit nécessite mcp 1.x (mcp>=1.28,<2). Corrige avec :  pip install \"mcp>=1.28,<2\""
+    ) from error
 
 from . import __version__, kit
 from .bridge_client import BridgeClient

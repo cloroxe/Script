@@ -11,7 +11,7 @@ echo [1/4] Environnement de build...
 %PY% -m venv .buildenv || goto :fail
 call ".buildenv\Scripts\activate.bat" || goto :fail
 python -m pip install --upgrade pip --quiet
-python -m pip install . pyinstaller || goto :fail
+python -m pip install . pyinstaller --retries 10 --timeout 60 || goto :fail
 
 set "OPTS=--noconfirm --onefile --clean --collect-data uefn_vibe --add-data src\uefn_vibe\bridge\vibe_bridge.py;uefn_vibe\bridge"
 
